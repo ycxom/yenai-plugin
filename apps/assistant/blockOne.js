@@ -1,18 +1,9 @@
-import { Config, Version, YamlReader, Log_Prefix } from "#yenai.components"
+import { Config, Version, YamlReader } from "../../components/index.js"
 import { common } from "../../model/index.js"
-import loader from "../../../../lib/plugins/loader.js"
 
 Bot.on("message", async(_e) => {
   const e = { ..._e }
-  if (e.msg === undefined) {
-    if (typeof loader.dealEvent === "function") {
-      loader.dealEvent(e)
-    } else if (typeof logger.dealMsg === "function") {
-      logger.dealMsg(e)
-    } else {
-      e.msg = e.raw_message
-    }
-  }
+  if (!e.msg) e.msg = e.raw_message
   if (!/^#(取消|(删|移)除)?拉[黑白](群聊?)?/.test(e.msg)) return false
   if (e.isMaster === undefined) {
     const { masterQQ } = Config
@@ -20,7 +11,7 @@ Bot.on("message", async(_e) => {
   }
   if (!e.at)e.at = _e.message.find(i => i.type === "at")?.qq
   if (!e.isMaster) return false
-  logger.info(`${Log_Prefix}[拉黑白名单]${e.msg}`)
+  logger.info(`[Yenai-Plugin][拉黑白名单]${e.msg}`)
   const blockOne = new BlockOne(e)
   if (/(取消|(删|移)除)/.test(e.msg)) {
     await blockOne.CancelBlockOne(e)

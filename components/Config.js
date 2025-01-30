@@ -4,7 +4,6 @@ import fs from "node:fs"
 import YamlReader from "./YamlReader.js"
 import cfg from "../../../lib/config/config.js"
 import _ from "lodash"
-import { Log_Prefix } from "#yenai.components"
 
 const Path = process.cwd()
 const Plugin_Name = "yenai-plugin"
@@ -52,7 +51,7 @@ class Config {
       for (const item of def) {
         if (item?.key?.commentBefore?.includes?.("noMerge")) continue
         if (!existingKeys.has(item.key.value)) {
-          logger.info(`${Log_Prefix}[合并配置][${name}][${item.key.value}]`)
+          logger.info(`[Yenai-Plugin][合并配置][${name}][${item.key.value}]`)
           user.push(item)
           isUpdate = true
         } else if (YAML.isMap(item.value)) {
@@ -189,7 +188,7 @@ class Config {
     watcher.on("change", path => {
       delete this.config[key]
       if (typeof Bot == "undefined") return
-      logger.mark(`${Log_Prefix}[修改配置文件][${type}][${name}]`)
+      logger.mark(`[Yenai-Plugin][修改配置文件][${type}][${name}]`)
       if (this[`change_${name}`]) {
         this[`change_${name}`]()
       }
@@ -244,7 +243,7 @@ class Config {
   async change_pixiv() {
     let pixiv = (await import("../model/index.js")).Pixiv
     let PixivApi = (await import("../model/Pixiv/api.js")).default
-    pixiv._PixivClient = new PixivApi(this.pixiv.refresh_token)
+    pixiv.PixivClient = new PixivApi(this.pixiv.refresh_token)
   }
 }
 export default new Config()

@@ -14,16 +14,6 @@ export default [
     }
   },
   {
-    field: "groupAdmin.blackQQ",
-    label: "黑名单QQ",
-    component: "GTags",
-    componentProps: {
-      allowAdd: true,
-      allowDel: true,
-      valueFormatter: ((value) => Number.parseInt(value)).toString()
-    }
-  },
-  {
     field: "groupAdmin.noBan",
     label: "白名单禁言自动解禁",
     component: "Switch"
@@ -38,36 +28,6 @@ export default [
     field: "groupAdmin.groupAddNotice.msg",
     label: "进群通知自定义消息",
     component: "Input"
-  },
-  {
-    field: "groupAdmin.recallMsgPer.bot",
-    label: "撤回bot消息权限",
-    bottomHelpMessage: "#撤回命令",
-    component: "RadioGroup",
-    required: true,
-    componentProps: {
-      options: [
-        { label: "所有人", value: "all" },
-        { label: "管理", value: "admin" },
-        { label: "群主", value: "owner" },
-        { label: "主人", value: "master" }
-      ]
-    }
-  },
-  {
-    field: "groupAdmin.recallMsgPer.member",
-    label: "撤回群员消息权限",
-    bottomHelpMessage: "#撤回命令",
-    component: "RadioGroup",
-    required: true,
-    componentProps: {
-      options: [
-        { label: "所有人", value: "all" },
-        { label: "管理", value: "admin" },
-        { label: "群主", value: "owner" },
-        { label: "主人", value: "master" }
-      ]
-    }
   },
   {
     component: "Divider",

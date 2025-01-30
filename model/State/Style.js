@@ -1,6 +1,6 @@
 import fs from "fs"
 import _ from "lodash"
-import { Config, Log_Prefix } from "../../components/index.js"
+import { Config } from "../../components/index.js"
 import requset from "../../lib/request/request.js"
 import { createAbortCont } from "./utils.js"
 
@@ -24,22 +24,19 @@ export async function getBackground() {
 
     const endTime = Date.now()
 
-    const elapsedTime = logger.green((endTime - startTime) + "ms")
+    const elapsedTime = endTime - startTime
 
     const fileSizeInBytes = buffer.byteLength
-    const fileSizeInKB = logger.cyan((fileSizeInBytes / 1024).toFixed(2) + "KB")
+    const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2)
 
-    logger.info(`${Log_Prefix}[State] 背景图片请求成功 ${fileSizeInKB} ${elapsedTime}`)
+    logger.info(`[Yenai-Plugin][状态]背景图片请求成功 ${fileSizeInKB}KB ${elapsedTime}ms`)
 
     const buffBase64 = arrayBufferToBase64(buffer)
     return `data:image/jpeg;base64,${buffBase64}`
   } catch (err) {
-    if (err.message.includes("aborted")) {
-      err.message = "请求超时"
-    }
     const bg = getDefaultBackdrop(backdropDefault)
-    backdrop && logger.warn(`${Log_Prefix}[State] 背景图请求失败，使用默认背景图 ${logger.yellow(bg.fileName)} ，错误原因: ${logger.red(err.message)}`)
-    return bg.path
+    backdrop && logger.warn(`[Yenai-Plugin][状态]背景图请求失败，使用默认背景图 “${bg}” ，错误原因: ${err.message}`)
+    return bg
   } finally {
     clearTimeout()
   }
@@ -53,10 +50,7 @@ function getDefaultBackdrop(backdropDefault) {
   const Bg_Path = "./plugins/yenai-plugin/resources/state/img/bg"
   if (backdropDefault === "random") {
     backdropDefault = _.sample(fs.readdirSync(Bg_Path))
-    logger.debug(`${Log_Prefix}[State] 使用随机背景图 “${backdropDefault}”`)
+    logger.debug(`[Yenai-Plugin][状态]使用随机背景图 “${backdropDefault}”`)
   }
-  return {
-    path: `${Plugin_Path}/resources/state/img/bg/${backdropDefault}`,
-    fileName: backdropDefault
-  }
+  return `${Plugin_Path}/resources/state/img/bg/${backdropDefault}`
 }
