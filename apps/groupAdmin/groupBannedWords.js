@@ -1,7 +1,6 @@
 import { common, GroupBannedWords as groupBannedWords } from "../../model/index.js"
-import { Config, Log_Prefix } from "../../components/index.js"
+import { Config } from "../../components/index.js"
 import _ from "lodash"
-import { GroupWhiteListCtrl } from "./groupWhiteListCtrl.js"
 
 export class GroupBannedWords extends plugin {
   constructor() {
@@ -11,7 +10,7 @@ export class GroupBannedWords extends plugin {
       priority: 1,
       rule: [
         {
-          reg: "^#?新增(模糊|精确|正则1|正则2|正则)?(踢|禁|撤|踢撤|禁撤|踢黑)?违禁词",
+          reg: "^#?新增(模糊|精确|正则)?(踢|禁|撤|踢撤|禁撤)?违禁词",
           fnc: "add"
         },
         {
@@ -37,39 +36,10 @@ export class GroupBannedWords extends plugin {
         {
           reg: "^#切换头衔屏蔽词匹配(模式)?$",
           fnc: "ProhibitedTitlePattern"
-        },
-        {
-          reg: "^#?违禁词帮助$",
-          fnc: "help"
         }
       ]
 
     })
-  }
-
-  get message() {
-    if (this.e.toString === Object.prototype.toString) {
-      return this.e.raw_message.trim()
-    } else {
-      return this.e.toString().trim()
-    }
-  }
-
-  async help(e) {
-    const msg = [
-      "该命令匹配正则：",
-      "^#?新增(模糊|精确|正则1|正则2|正则)?(踢|禁|撤|踢撤|禁撤|踢黑)?违禁词",
-      "-------------------",
-      "支持的模式：模糊，精确，正则1，正则2",
-      "支持的处理方式：踢，禁，撤，踢撤，禁撤，踢黑",
-      "-------------------",
-      "命令示例：",
-      "\"#新增违禁词123\" --- 默认添加精确禁违禁词",
-      "\"#新增正则1违禁词^123456$\" --- 该种方法需将\"\\\"转义，如：\\d+\\d+\\d+，默认添加正则为正则1",
-      "\"#新增正则2违禁词/^123456$/\" --- 该种方法无需转义",
-      "\"#新增模糊踢违禁词123\" --- 添加模糊匹配处理方法为踢出群聊的正则"
-    ].join("\n")
-    e.reply(msg)
   }
 
   async accept(e) {
@@ -81,8 +51,8 @@ export class GroupBannedWords extends plugin {
     if (_.isEmpty(bannedWords)) {
       return false
     }
-    
-    const trimmedKeyWord = this.#trimAlias(this.message)
+    const KeyWord = e.raw_message.trim()
+    const trimmedKeyWord = this.#trimAlias(KeyWord)
     let data = null
     for (const [ k, v ] of bannedWords) {
       if (k.test(trimmedKeyWord)) {
@@ -94,19 +64,15 @@ export class GroupBannedWords extends plugin {
     const muteTime = groupBannedWords.getMuteTime(e.group_id)
     const punishments = {
       1: () => e.member.kick(),
-      2: () => e.member.mute(muteTime),
+      2: () => this.#mute(muteTime),
       3: () => e.recall(),
       4: () => {
         e.member.kick()
         e.recall()
       },
       5: () => {
-        e.member.mute(muteTime)
+        this.#mute(muteTime)
         e.recall()
-      },
-      6: () => {
-        new GroupWhiteListCtrl().addList(e, e.user_id, "add", "blackQQ")
-        e.member.kick()
       }
     }
     const groupPenaltyAction = {
@@ -114,8 +80,7 @@ export class GroupBannedWords extends plugin {
       2: `禁言${muteTime}秒`,
       3: "撤回消息",
       4: "踢出群聊并撤回消息",
-      5: `禁言${muteTime}秒并撤回消息`,
-      6: "踢出群聊并加入黑名单"
+      5: `禁言${muteTime}秒并撤回消息`
     }
     if (punishments[data.penaltyType]) {
       punishments[data.penaltyType]()
@@ -131,6 +96,15 @@ export class GroupBannedWords extends plugin {
       ], false, { recallMsg: 30 })
       return "return"
     }
+  }
+
+  /**
+   * 禁言
+   * @param time
+   */
+  #mute(time) {
+    const e = this.e
+    e.member.mute(time)
   }
 
   /**
@@ -153,36 +127,20 @@ export class GroupBannedWords extends plugin {
 
   async add(e) {
     if (!common.checkPermission(e, "admin", "admin")) return false
-    let word = this.#trimAlias(this.message)
-    let [ , matchType, penaltyType, words ] = word.match(/#?新增(模糊|精确|正则1|正则2|正则)?(踢|禁|撤|踢撤|禁撤)?违禁词(.*)/)
-
-    if (!words) return this.help(e)
+    let word = this.#trimAlias(e.raw_message)
+    word = word.match(/^#?新增(模糊|精确|正则)?(踢|禁|撤|踢撤|禁撤)?违禁词(.*)$/)
+    if (!word[3]) return e.reply("需要添加的屏蔽词为空")
     // 校验正则
-    if (/正则(1|2)?/.test(matchType)) {
+    if (word[1] === "正则") {
       try {
-        if (matchType == "正则2") {
-          global.eval(words)
-        } else {
-          words = new RegExp(words)
-        }
-      } catch (error) {
-        logger.error(`${Log_Prefix} 违禁词正则错误`, error)
-        let msg = [
-          "❎ 正则表达式错误",
-          "-------------------",
-          "使用示例：",
-          "#新增正则违禁词^123456$",
-          "该种方法需将\"\\\"转义，如：\\d+\\d+\\d+",
-          "-------------------",
-          "#新增正则2违禁词/^123456$/",
-          "改种方法无需转义，如：/^123456$/"
-        ].join("\n")
-        return e.reply(msg)
+        global.eval(word[3])
+      } catch {
+        return e.reply("正则表达式错误")
       }
     }
     try {
       let res = groupBannedWords.addBannedWords(
-        e.group_id, words.trim(), matchType, penaltyType, e.user_id
+        e.group_id, word[3].trim(), word[1], word[2], e.user_id
       )
       e.reply([
         "✅ 成功添加屏蔽词\n",
@@ -198,7 +156,7 @@ export class GroupBannedWords extends plugin {
 
   async del(e) {
     if (!common.checkPermission(e, "admin", "admin")) return false
-    let word = this.#trimAlias(this.message)
+    let word = this.#trimAlias(e.raw_message)
     word = word.replace(/#?删除违禁词/, "").trim()
     if (!word) return e.reply("需要删除的屏蔽词为空")
     try {
@@ -210,7 +168,7 @@ export class GroupBannedWords extends plugin {
   }
 
   async query(e) {
-    let word = this.#trimAlias(this.message)
+    let word = this.#trimAlias(e.raw_message)
     word = word.replace(/#?查看违禁词/, "").trim()
     if (!word) return e.reply("需要查询的屏蔽词为空")
     try {

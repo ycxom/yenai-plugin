@@ -1,16 +1,16 @@
 import { common } from "../../model/index.js"
-import { Config, Log_Prefix } from "../../components/index.js"
+import { Config } from "../../components/index.js"
 
-export class GroupWhiteListCtrl extends plugin {
+export class groupWhiteListCtrl extends plugin {
   constructor() {
     super({
-      name: "椰奶群管-黑白名单",
+      name: "椰奶群管-白名单",
       event: "message.group",
       priority: 500,
       rule: [
         {
-          reg: "^#?群管(加|删)(白|黑)(名单)?",
-          fnc: "addList"
+          reg: "^#?群管(加|删)白(名单)?",
+          fnc: "whiteQQ"
         },
         {
           reg: "^#?(开启|关闭)白名单(自动)?解禁",
@@ -20,40 +20,26 @@ export class GroupWhiteListCtrl extends plugin {
     })
   }
 
-  accept(e) {
-    if (!common.checkPermission(e, "all", "admin", { isReply: false })) return
-    if (Config.groupAdmin.blackQQ.includes(e.user_id)) {
-      e.group.kickMember(e.user_id)
-      e.reply(`⚠ 已踢出黑名单用户${e.user_id}`)
-    }
-  }
-
   /**
-   * 加黑白名单
-   * @param e
-   * @param custom
-   * @param operation
-   * @param model
+   * 加白名单
    */
-  async addList(e, custom, operation, model) {
-    if (!common.checkPermission(e, "admin", "admin")) return
+  async whiteQQ() {
+    if (!common.checkPermission(this.e, "master")) return
 
-    operation ||= /加/.test(e.msg) ? "add" : "del"
-    model ||= /黑/.test(e.msg) ? "blackQQ" : "whiteQQ"
-    let type = model === "blackQQ" ? "黑" : "白"
-    let qq = custom || e.at || (e.msg.match(/\d+/)?.[0] || "")
+    let type = /加/.test(this.e.msg) ? "add" : "del"
+    let qq = this.e.at || (this.e.msg.match(/\d+/)?.[0] || "")
     qq = Number(qq) || String(qq)
 
-    if (!qq) return this.reply(`❎ 请艾特或输入需要加${type}的QQ`)
+    if (!qq) return this.reply("❎ 请艾特或输入需要加白的QQ")
 
-    const list = Config.groupAdmin[model]
-    const isWhite = list.includes(qq)
+    const { whiteQQ } = Config.groupAdmin
+    const isWhite = whiteQQ.includes(qq)
 
-    if (isWhite && operation === "add") return this.reply(`❎ 此人已在群管${type}名单内`)
-    if (!isWhite && operation === "del") return this.reply(`❎ 此人未在群管${type}名单中`)
+    if (isWhite && type === "add") return this.reply("❎ 此人已在群管白名单内")
+    if (!isWhite && type === "del") return this.reply("❎ 此人未在群管白名单中")
 
-    Config.modifyArr("groupAdmin", model, qq, operation)
-    e.reply(`✅ 群管${type}名单已${operation === "add" ? "加入" : "删除"}${qq}`)
+    Config.modifyArr("groupAdmin", "whiteQQ", qq, type)
+    this.reply(`✅ 已${type === "add" ? "加入" : "删除"}${qq}到群管白名单`)
   }
 
   /**
@@ -88,22 +74,5 @@ Bot.on("notice.group.ban", async(e) => {
   ) {
     await e.group.muteMember(e.user_id, 0)
     e.reply("已解除白名单用户的禁言")
-  }
-})
-
-Bot.on("request.group.add", async(e) => {
-  if (!common.checkPermission(e, "all", "admin", { isReply: false })) return
-  if (Config.groupAdmin.blackQQ.includes(e.user_id)) {
-    e.approve(false)
-    logger.info(`${Log_Prefix} 已拒绝黑名单${e.user_id}的入群申请`)
-  }
-})
-
-Bot.on("notice.group.increase", async(e) => {
-  if (!common.checkPermission(e, "all", "admin", { isReply: false })) return
-  if (Config.groupAdmin.blackQQ.includes(e.user_id)) {
-    logger.info(`${Log_Prefix} 检测到黑名单${e.user_id}加入${e.group_id}，已踢出`)
-    e.group.kickMember(e.user_id)
-    e.group.sendMsg(`⚠ 检测到黑名单${e.user_id}入群，已自动踢出`)
   }
 })

@@ -1,6 +1,5 @@
 import { getFileSize } from "./utils.js"
 import si from "systeminformation"
-import { Log_Prefix } from "#yenai.components"
 
 global.yenai_debug ||= {}
 global.yenai_debug.si = si
@@ -63,7 +62,7 @@ export class BuildDebug {
       const endTime = Date.now()
       const duration = endTime - startTime
       const ter = logger.green(duration + " ms")
-      logger.debug(`${Log_Prefix}[State] 获取 ${logger.magenta(name)} 用时: ${ter}`)
+      logger.debug(`[Yenai-Plugin][state] 获取 ${logger.magenta(name)} 用时: ${ter}`)
       this.debugMessages.push(`${name}: ${duration} ms`)
       return result
     })
