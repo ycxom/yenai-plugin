@@ -133,7 +133,12 @@ class Config {
   getDefOrConfig(name) {
     let def = this.getdefSet(name)
     let config = this.getConfig(name)
-    return _.merge({}, def, config)
+    function customizer(objValue, srcValue) {
+      if (_.isArray(objValue)) {
+        return srcValue
+      }
+    }
+    return _.mergeWith({}, def, config, customizer)
   }
 
   /**

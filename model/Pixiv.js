@@ -13,6 +13,15 @@ export default new class Pixiv {
     this.ranktype = rankType
     this.domain = `${Config.pixiv.hibiAPI}/api/pixiv`
     this.PixivClient = new PixivApi(Config.pixiv.refresh_token)
+    this._PixivClient = Config.pixiv.refresh_token && new PixivApi(Config.pixiv.refresh_token)
+  }
+
+  get PixivClient() {
+    if (this._PixivClient?.auth) {
+      return this._PixivClient
+    } else {
+      return hibiApi
+    }
   }
 
   async loginInfo() {

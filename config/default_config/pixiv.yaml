@@ -8,7 +8,10 @@ pixivImageProxy: i.pixiv.re
 limit: 30
 
 # 使用的hibiapi地址 https://github.com/mixmoe/HibiAPI
-hibiAPI: https://hibiapi.dengfenglai.icu
+# 默认：https://hibi.Yunzai-Bot.com
+# 备1：https://dengfenglai-hibiapi.hf.space
+# 备2：https://hibiapi.dengfenglai.workers.dev
+hibiAPI: https://hibi.Yunzai-Bot.com
 
 # Pixiv 登录凭证刷新令牌 (Refresh Token)
 # 获取方法请参考: https://github.com/mixmoe/HibiAPI/issues/53
